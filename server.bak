@@ -14,7 +14,7 @@
 (define E-SCENE (empty-scene E-SCENE-W E-SCENE-H E-SCENE-COLOR))
 (define HALF-IMG-W (/ IMAGE-WIDTH 2))
 
-;hello
+
 (define MAX-IMAGE-X-EVEN 6.5)
 (define MIN-IMAGE-X-EVEN 0.5)
 (define MAX-IMAGE-X-ODD 6)

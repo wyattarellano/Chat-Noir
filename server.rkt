@@ -424,6 +424,16 @@ TEMPLATE FOR A FUNCTION ON A LOS
                               (define (not-blocked-space? a-posn a-los)
                                 (not (ormap (λ (blocked-space) (equal? a-posn blocked-space)) a-los)))
 
+                               ;; image-x --> pixel-x
+                              ;; Purpose: To translate the given image-x to a pixel-x
+                              (define (image-x->pix-x ix)
+                                (+ (* ix IMAGE-WIDTH) HALF-IMG-W))
+
+                              ;; image-y --> pixel-y
+                              ;; Purpose: To translate the given image-y to a pixel-y
+                              (define (image-y->pix-y iy)
+                                (+ (* iy IMAGE-HEIGHT) HALF-IMG-W))
+
                               ;; world number number -> posn
                               ;; Purpose: Move the cat
                               (define (move-cat a-world mouse-x mouse-y)
@@ -517,35 +527,34 @@ TEMPLATE FOR A FUNCTION ON A LOS
                                   ))
 
 
-                              ;; image-x --> pixel-x
-                              ;; Purpose: To translate the given image-x to a pixel-x
-                              (define (image-x->pix-x ix)
-                                (+ (* ix IMAGE-WIDTH) HALF-IMG-W))
+                              ;; number -> boolean
+                               ;; Purpose: Determine if row is even
+                               (define (even-row? mouse-y)
+                                 (even? (round (/ (- mouse-y PIX-OF-IMG-0) IMAGE-HEIGHT))))
 
-                              ;; image-y --> pixel-y
-                              ;; Purpose: To translate the given image-y to a pixel-y
-                              (define (image-y->pix-y iy)
-                                (+ (* iy IMAGE-HEIGHT) HALF-IMG-W))
-
-                               ;;number number -> posn
-                               ;;Purpose: Make a posn
-                               (define (block mouse-x mouse-y)
-                                 (if (even-row? mouse-y)
-                                     (cons (even-posn mouse-x mouse-y) (world-blockedspaces game))
-                                     (cons (odd-posn mouse-x mouse-y) (world-blockedspaces game))))
-
+                              
                                ;;number number -> posn
                                ;;Purpose: Make a posn based on their Y posn
                                (define (even-posn mouse-x mouse-y)
                                  (make-posn (+ (floor (/ (- mouse-x PIX-OF-IMG-0) IMAGE-WIDTH)) OFFSET-VALUE)
                                             (round (/ (- mouse-y PIX-OF-IMG-0) IMAGE-HEIGHT))))
-
+                               
+                               
                                ;;number number -> posn
                                ;;Purpose: Make a posn based on their Y posn
                                (define (odd-posn mouse-x mouse-y)
                                  (make-posn (round (/ (- mouse-x PIX-OF-IMG-0) IMAGE-WIDTH))
                                             (round (/ (- mouse-y PIX-OF-IMG-0) IMAGE-HEIGHT))))
 
+
+                                ;;number number -> posn
+                               ;;Purpose: Make a posn
+                               (define (block mouse-x mouse-y)
+                                 (if (even-row? mouse-y)
+                                     (cons (even-posn mouse-x mouse-y) (world-blockedspaces game))
+                                     (cons (odd-posn mouse-x mouse-y) (world-blockedspaces game))))
+
+                               
                                ;; number number world -> boolean
                                ;; Purpose: Determine if a posn made by a mouse is already blocked
                                (define (not-member-of-blocked mouse-x mouse-y a-world)
@@ -577,15 +586,7 @@ TEMPLATE FOR A FUNCTION ON A LOS
                                       (not-member-of-blocked mouse-x mouse-y a-world)
                                       (not-on-cat mouse-x mouse-y a-world)))
 
-                               ;; number -> boolean
-                               ;; Purpose: Determine if row is even
-                               (define (even-row? mouse-y)
-                                 (even? (round (/ (- mouse-y PIX-OF-IMG-0) IMAGE-HEIGHT))))
-
-                               ;; number -> boolean
-                               ;; Purpose: Determine if row is even
-                               (define (odd-row? mouse-y)
-                                 (odd? (round (/ (- mouse-y PIX-OF-IMG-0) IMAGE-HEIGHT))))
+                               
 
                                ;; world number number -> posn
                                ;; Purpose: To block a space based on the the given mouseclick

@@ -563,62 +563,17 @@ TEMPLATE FOR A FUNCTION ON A LOS
 
                                 ;;number number -> posn
                                ;;Purpose: Make a posn
-                               (define (block mouse-x mouse-y)
+                               (define (block-space mouse-x mouse-y)
                                  (if (even-row? mouse-y)
                                      (cons (even-posn mouse-x mouse-y) (world-blockedspaces game))
-                                     (cons (odd-posn mouse-x mouse-y) (world-blockedspaces game))))
-
-                               
-                               ;; number number world -> boolean
-                               ;; Purpose: Determine if a posn made by a mouse is already blocked
-                               (define (not-member-of-blocked mouse-x mouse-y a-world)
-                                 (and (not (member? (even-posn mouse-x mouse-y) (world-blockedspaces a-world)))
-                                     (not (member? (odd-posn mouse-x mouse-y) (world-blockedspaces a-world)))))
-
-                               ;;number number world -> boolean
-                               ;;Purpose: Determine if a posn made by a mouse is a catposn
-                               (define (not-on-cat mouse-x mouse-y a-world)
-                                 (and (not (equal? (even-posn mouse-x mouse-y) (world-catposn a-world)))
-                                      (not (equal? (odd-posn mouse-x mouse-y) (world-catposn a-world)))))
-                               
-                              ;; number number -> posn
-                              ;; Purpose: To determine if a click is in the space-list
-                              (define (valid-space? mouse-x mouse-y)
-                                (or (member?
-                                     (even-posn mouse-x mouse-y)
-                                     space-list)
-                                    (member?
-                                     (odd-posn mouse-x mouse-y)
-                                     space-list)))
-                              
-                                               
-                               ;; world number number -> boolean
-                               ;; Purpose: To determine if a click is valid
-                               (define (valid-click? mouse-x mouse-y a-world)
-                                 (and (valid-space? mouse-x mouse-y)
-                                      (not-member-of-blocked mouse-x mouse-y a-world)
-                                      (not-on-cat mouse-x mouse-y a-world)))
-
-                               
-
-                               ;; world number number -> posn
-                               ;; Purpose: To block a space based on the the given mouseclick
-                               (define (block-space a-world mouse-x mouse-y)
-                                 (if (valid-click? mouse-x mouse-y a-world)
-                                     (block mouse-x mouse-y)
-                                     (world-blockedspaces a-world)))]
+                                     (cons (odd-posn mouse-x mouse-y) (world-blockedspaces game))))]
 
                         
-                        (cond [(and (equal? name "cat")
-                                    (equal? (world-gamestatus game) 'cat)
-                                    (valid-click? mouse-x mouse-y game)
-                                    (not (equal? (move-cat game mouse-x mouse-y) (world-catposn game))))
+                        (cond [(equal? (world-gamestatus game) 'cat)
                                (make-world 'blocker (move-cat game mouse-x mouse-y) (world-blockedspaces game))]
-                              [(and (equal? name "blocker")
-                                    (equal? (world-gamestatus game) 'blocker)
-                                    (valid-click? mouse-x mouse-y game))
-                               (make-world 'cat (world-catposn game) (block-space game mouse-x mouse-y))]
-                              [else game])))]
+                              [(equal? (world-gamestatus game) 'blocker)
+                               (make-world 'cat (world-catposn game) (block-space game mouse-x mouse-y))])))]
+                              ;;[else game])))]
                        
               
                     (make-bundle (make-univ (univ-iws a-univ) (new-world mouse-x mouse-y))

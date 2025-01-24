@@ -33,7 +33,7 @@
 (define Y-ROW 4)
 (define X-ROW 6)
 (define PICK-ODD-ROW 2)
-(define PLAYER-LIMIT 2)
+
 
 ;; Data Definitions
 
@@ -64,17 +64,15 @@ A pixel-Y is an integer in [0 .. E-SCENE-H - 1]
 ;; gamestatus can be either:
 ;;  1. 'cat
 ;;  2. 'blocker
-;;  3. 'game-full
+;;  3. 'invalid
 ;;  4. 'name-taken
 ;;  5. 'tech-win
-;;  6. 'invalid
 
 ;; sample instances of gamestatus
 
 (define INIT-STATUS 'blocker) 
 (define CAT-STATUS 'cat)
 (define BLOCKER-STATUS 'blocker)
-(define FULL-STATUS 'game-full)
 (define TAKEN-STATUS 'name-taken)
 (define TECH-WIN-STATUS 'tech-win)
 (define INVALID-STATUS 'invalid)
@@ -216,7 +214,6 @@ TEMPLATE FOR A FUNCTION ON A LOS
 (define WORLD4 (make-world CAT-STATUS (make-posn 3 3) INIT-BLOCKED-SPACES3))
 (define WORLD5 (make-world BLOCKER-STATUS (make-posn 0 3) INIT-BLOCKED-SPACES))
 (define WORLD6 (make-world CAT-STATUS (make-posn 5 5) (list (make-posn 1 1))))
-(define WORLD-FS (make-world FULL-STATUS (make-posn 5 5) (list (make-posn 1 1))))
 (define WORLD-TS (make-world TAKEN-STATUS (make-posn 5 5) (list (make-posn 1 1))))
 (define WORLD-TW (make-world TECH-WIN-STATUS (make-posn 5 5) (list (make-posn 1 1))))
 (define WORLD-IS (make-world INVALID-STATUS (make-posn 5 5) (list (make-posn 1 1))))
@@ -563,7 +560,7 @@ TEMPLATE FOR A FUNCTION ON A LOS
 
                                 ;;number number -> posn
                                ;;Purpose: Make a posn
-                               (define (block-space mouse-x mouse-y)
+                               (define (block-space game mouse-x mouse-y)
                                  (if (even-row? mouse-y)
                                      (cons (even-posn mouse-x mouse-y) (world-blockedspaces game))
                                      (cons (odd-posn mouse-x mouse-y) (world-blockedspaces game))))]
@@ -595,34 +592,6 @@ TEMPLATE FOR A FUNCTION ON A LOS
   (make-univ
    (list iworld1 iworld2)
    (make-world
-    'cat
-    (make-posn 5 5)
-    (list (make-posn 1 1))))
-  (list
-   (make-mail
-    iworld1
-    (list
-     'world
-     'cat
-     (list 5 5)
-     (list (list 1 1))))
-   (make-mail
-    iworld2
-    (list
-     'world
-     'cat
-     (list 5 5)
-     (list (list 1 1)))))
-  '()))
-
-(check-expect
- (process-message OTHR-UNIV iworld1 BLOCK-LEFT)
- (make-bundle
-  (make-univ
-   (list
-    iworld1
-    iworld2)
-   (make-world
     'blocker
     (make-posn 5 5)
     (list (make-posn 1 1))))
@@ -641,6 +610,34 @@ TEMPLATE FOR A FUNCTION ON A LOS
      'blocker
      (list 5 5)
      (list (list 1 1)))))
+  '()))
+
+(check-expect
+ (process-message OTHR-UNIV iworld1 BLOCK-LEFT)
+ (make-bundle
+  (make-univ
+   (list
+    iworld1
+    iworld2)
+   (make-world
+    'cat
+    (make-posn 5 5)
+    (list (make-posn -0.5 0) (make-posn 1 1))))
+  (list
+   (make-mail
+    iworld1
+    (list
+     'world
+     'cat
+     (list 5 5)
+     (list (list -0.5 0) (list 1 1))))
+   (make-mail
+    iworld2
+    (list
+     'world
+     'cat
+     (list 5 5)
+     (list (list -0.5 0) (list 1 1)))))
   '()))
 
 (check-error (process-message OTHR-UNIV iworld2 (list 'clicker 2 4))
@@ -676,7 +673,7 @@ TEMPLATE FOR A FUNCTION ON A LOS
          (make-bundle a-univ (list (make-mail an-iw (cons 'world (marshal-world WORLD-TS)))) (list an-iw))]
         [(not (valid-name? an-iw))
          (make-bundle a-univ (list (make-mail an-iw (cons 'world (marshal-world WORLD-IS)))) (list an-iw))]
-        [(< (length (univ-iws a-univ)) PLAYER-LIMIT)
+        [else
            (make-bundle
             (make-univ new-iws new-game)
             (map
@@ -684,8 +681,7 @@ TEMPLATE FOR A FUNCTION ON A LOS
                (make-mail iw
                           (cons 'world (marshal-world new-game))))
              new-iws)
-            '())]
-        [else (make-bundle a-univ (list (make-mail an-iw (cons 'world (marshal-world WORLD-FS)))) (list an-iw))])))
+            '())])))
 
 ;; Sample expressions for add-player
 (define RPT-ADD (make-bundle OTHR-UNIV (list (make-mail iworld1 (cons 'world (marshal-world WORLD-TS)))) (list iworld1)))

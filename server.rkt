@@ -351,7 +351,9 @@ TEMPLATE FOR A FUNCTION ON A LOS
               (list 'cat (list 2.5 2) (list (list 2 1) (list 5 7) (list 2 3))))
 
 #|
-     A to-player message (tpm) is: (cons 'world mw)
+     A to-player message (tpm) is either:
+ 1. (cons 'world mw)
+ 2. (cons 'connection-denied mw)
 
  tpm ... --> ...
  Purpose:
@@ -716,7 +718,7 @@ TEMPLATE FOR A FUNCTION ON A LOS
                           (cons 'world (marshal-world new-game))))
              new-iws)
             '())]
-        [else (make-bundle a-univ (list (make-mail an-iw UNINIT-WORLD)) (list an-iw))])))
+        [else (make-bundle a-univ (list (make-mail an-iw (cons 'connection-denied (marshal-world new-game))) (list an-iw)))])))
 
 ;; Sample expressions for add-player
 (define RPT-ADD (make-bundle OTHR-UNIV '() (list iworld1)))

@@ -685,10 +685,12 @@ TEMPLATE FOR A FUNCTION ON A LOS
 ;; universe iworld --> bundle
 ;; Purpose: Add new world to the universe
 (define (add-player a-univ an-iw)
-  (cond [(member? (iworld-name an-iw) (map iworld-name (univ-iws a-univ)))
-         (make-bundle a-univ '() (list an-iw))]
-        [(< (length (univ-iws a-univ)) PLAYER-LIMIT)
-         (local [(define new-iws (cons an-iw (univ-iws a-univ)))
+  (local [;;iw -> boolean
+          ;;Purpose: To determine if an iw has a valid name
+          (define (valid-name? an-iw)
+            (or (equal? (iworld-name an-iw) "cat")
+                (equal? (iworld-name an-iw) "blocker")))
+          (define new-iws (cons an-iw (univ-iws a-univ)))
                  (define game (univ-game a-univ))
                  (define new-game (if (equal? game UNINIT-WORLD)
                                       (make-world
@@ -701,6 +703,11 @@ TEMPLATE FOR A FUNCTION ON A LOS
                                        (world-catposn game)
                                        (world-blockedspaces game)
                                        )))]
+    
+  (cond [(member? (iworld-name an-iw) (map iworld-name (univ-iws a-univ)))
+         (make-bundle a-univ '() (list an-iw))]
+        [(and (< (length (univ-iws a-univ)) PLAYER-LIMIT)
+              (valid-name? an-iw))
            (make-bundle
             (make-univ new-iws new-game)
             (map
@@ -708,9 +715,9 @@ TEMPLATE FOR A FUNCTION ON A LOS
                (make-mail iw
                           (cons 'world (marshal-world new-game))))
              new-iws)
-            '()))]
-        [else (make-bundle a-univ (list (make-mail an-iw UNINIT-WORLD)) (list an-iw))]))
- 
+            '())]
+        [else (make-bundle a-univ (list (make-mail an-iw UNINIT-WORLD)) (list an-iw))])))
+
 ;; Sample expressions for add-player
 (define RPT-ADD (make-bundle OTHR-UNIV '() (list iworld1)))
 (define <-2-ADD (local [(define new-iws (cons iworld2 (univ-iws INIT-UNIV)))
@@ -759,14 +766,9 @@ TEMPLATE FOR A FUNCTION ON A LOS
           (define new-iws (filter (λ (iw)
                                     (not (string=? (iworld-name an-iw)
                                                    (iworld-name iw))))
-                                  iws))
-          (define new-game (make-world
-                            (world-turn game)
-                            (world-catposn game)
-                            (world-blockedspaces game)
-                            ))]
-    (make-bundle (make-univ new-iws new-game)
-                 (map (λ (iw) (make-mail iw (cons 'world (marshal-world new-game))))
+                                  iws))]
+    (make-bundle (make-univ new-iws game)
+                 (map (λ (iw) (make-mail iw (cons 'world (marshal-world game))))
                       new-iws)
                  '())))
 

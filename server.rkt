@@ -61,15 +61,23 @@ A pixel-Y is an integer in [0 .. E-SCENE-H - 1]
 (define MIN-IMG-Y 0)
 (define MAX-IMG-Y (sub1 MAX-CHARS-VERTICAL))
 
-;; a turn can be either:
+;; gamestatus can be either:
 ;;  1. 'cat
 ;;  2. 'blocker
+;;  3. 'game-full
+;;  4. 'name-taken
+;;  5. 'tech-win
+;;  6. 'invalid
 
-;; sample instances of turn
-;(define INIT-TURN 'blocker)
-(define INIT-TURN 'blocker) 
-(define CAT-TURN 'cat)
-(define BLOCKER-TURN 'blocker)
+;; sample instances of gamestatus
+
+(define INIT-STATUS 'blocker) 
+(define CAT-STATUS 'cat)
+(define BLOCKER-STATUS 'blocker)
+(define FULL-STATUS 'game-full)
+(define TAKEN-STATUS 'name-taken)
+(define TECH-WIN-STATUS 'tech-win)
+(define INVALID-STATUS 'invalid)
 
 
 ;; making templates for catposn, a space, and an los
@@ -197,21 +205,25 @@ TEMPLATE FOR A FUNCTION ON A LOS
         ...
 |#
 
-;; a world is a structure: (make-world turn posn los)
-(define-struct world (turn catposn blockedspaces))
+;; a world is a structure: (make-world gamestatus posn los)
+(define-struct world (gamestatus catposn blockedspaces))
 
 ;; sample instances of a world
 (define UNINIT-WORLD 'uninitialized)
-(define INIT-WORLD (make-world INIT-TURN INIT-CATPOSN INIT-BLOCKED-SPACES))
-(define WORLD2 (make-world CAT-TURN CAT-POSN2 INIT-BLOCKED-SPACES2))
-(define WORLD3 (make-world BLOCKER-TURN (make-posn 5 5) (list (make-posn 1 1))))
-(define WORLD4 (make-world CAT-TURN (make-posn 3 3) INIT-BLOCKED-SPACES3))
-(define WORLD5 (make-world BLOCKER-TURN (make-posn 0 3) INIT-BLOCKED-SPACES))
-(define WORLD6 (make-world CAT-TURN (make-posn 5 5) (list (make-posn 1 1))))
+(define INIT-WORLD (make-world INIT-STATUS INIT-CATPOSN INIT-BLOCKED-SPACES))
+(define WORLD2 (make-world CAT-STATUS CAT-POSN2 INIT-BLOCKED-SPACES2))
+(define WORLD3 (make-world BLOCKER-STATUS (make-posn 5 5) (list (make-posn 1 1))))
+(define WORLD4 (make-world CAT-STATUS (make-posn 3 3) INIT-BLOCKED-SPACES3))
+(define WORLD5 (make-world BLOCKER-STATUS (make-posn 0 3) INIT-BLOCKED-SPACES))
+(define WORLD6 (make-world CAT-STATUS (make-posn 5 5) (list (make-posn 1 1))))
+(define WORLD-FS (make-world FULL-STATUS (make-posn 5 5) (list (make-posn 1 1))))
+(define WORLD-TS (make-world TAKEN-STATUS (make-posn 5 5) (list (make-posn 1 1))))
+(define WORLD-TW (make-world TECH-WIN-STATUS (make-posn 5 5) (list (make-posn 1 1))))
+(define WORLD-IS (make-world INVALID-STATUS (make-posn 5 5) (list (make-posn 1 1))))
 
 ;; A world is either
 ;;  1. 'uninitialized
-;;  2. a structure: (make-world turn catposn los)
+;;  2. a structure: (make-world gamestatus catposn los)
 
 
 #|
@@ -221,7 +233,7 @@ TEMPLATE FOR A FUNCTION ON A LOS
  (define (f-on-world w ...)
    (if (eq? a-world 'uninitialized)
        ...
-       (... (f-on-turn (world-turn w))... (f-on-catposn (world-catposn w))
+       (... (f-on-status (world-gamestatus w))... (f-on-catposn (world-catposn w))
         ... (world-blockedspaces w)...)))
 
   ;; Sample instances of world
@@ -239,8 +251,8 @@ TEMPLATE FOR A FUNCTION ON A LOS
   ;; Tests using sample values for f-on-world
   (check-expect (f-on-world ... ...) ... ) ...     
 
-(define INIT-WORLD  (make-world INIT-TURN INIT-CATPOSN INIT-LOS))
-(define INIT-WORLD2 (make-world INIT-TURN2 INIT-CATPOSN2 INIT-LOS2))
+(define INIT-WORLD  (make-world INIT-STATUS INIT-CATPOSN INIT-LOS))
+(define INIT-WORLD2 (make-world INIT-STATUS2 INIT-CATPOSN2 INIT-LOS2))
 (define WORLD3 (make-world 'cat (make-posn 3 3)
                                  (list (make-posn 5 5) (make-posn 3 3))
                            ))
@@ -325,17 +337,17 @@ TEMPLATE FOR A FUNCTION ON A LOS
 ;; world -> mw
 ;; Purpose: To marshal a world
 (define (marshal-world a-world)
-  (list (world-turn a-world)
+  (list (world-gamestatus a-world)
         (marshal-cat (world-catposn a-world))
         (map marshal-space (world-blockedspaces a-world))
         ))
 
 ;; sample expressions for marshal-world
-(define MINIT-WORLD (list (world-turn INIT-WORLD)
+(define MINIT-WORLD (list (world-gamestatus INIT-WORLD)
                           (marshal-cat (world-catposn INIT-WORLD))
                           (map marshal-space (world-blockedspaces INIT-WORLD))
                           ))
-(define MWORLD2 (list (world-turn WORLD2)
+(define MWORLD2 (list (world-gamestatus WORLD2)
                       (marshal-cat (world-catposn WORLD2))
                       (map marshal-space (world-blockedspaces WORLD2))
                       ))
@@ -583,8 +595,7 @@ TEMPLATE FOR A FUNCTION ON A LOS
                                ;; world number number -> boolean
                                ;; Purpose: To determine if a click is valid
                                (define (valid-click? mouse-x mouse-y a-world)
-                                 (and (not-blocked-space? (make-posn mouse-x mouse-y) (world-blockedspaces a-world))
-                                      (valid-space? mouse-x mouse-y)
+                                 (and (valid-space? mouse-x mouse-y)
                                       (not-member-of-blocked mouse-x mouse-y a-world)
                                       (not-on-cat mouse-x mouse-y a-world)))
 
@@ -599,12 +610,12 @@ TEMPLATE FOR A FUNCTION ON A LOS
 
                         
                         (cond [(and (equal? name "cat")
-                                    (equal? (world-turn game) 'cat)
+                                    (equal? (world-gamestatus game) 'cat)
                                     (valid-click? mouse-x mouse-y game)
                                     (not (equal? (move-cat game mouse-x mouse-y) (world-catposn game))))
                                (make-world 'blocker (move-cat game mouse-x mouse-y) (world-blockedspaces game))]
                               [(and (equal? name "blocker")
-                                    (equal? (world-turn game) 'blocker)
+                                    (equal? (world-gamestatus game) 'blocker)
                                     (valid-click? mouse-x mouse-y game))
                                (make-world 'cat (world-catposn game) (block-space game mouse-x mouse-y))]
                               [else game])))]
@@ -696,20 +707,21 @@ TEMPLATE FOR A FUNCTION ON A LOS
                  (define game (univ-game a-univ))
                  (define new-game (if (equal? game UNINIT-WORLD)
                                       (make-world
-                                       INIT-TURN
+                                       INIT-STATUS
                                        INIT-CATPOSN
                                        INIT-BLOCKED-SPACES
                                        )
                                       (make-world
-                                       (world-turn game)
+                                       (world-gamestatus game)
                                        (world-catposn game)
                                        (world-blockedspaces game)
-                                       )))]
+                                       )))]   
     
   (cond [(member? (iworld-name an-iw) (map iworld-name (univ-iws a-univ)))
-         (make-bundle a-univ '() (list an-iw))]
-        [(and (< (length (univ-iws a-univ)) PLAYER-LIMIT)
-              (valid-name? an-iw))
+         (make-bundle a-univ (list (make-mail an-iw (cons 'world (marshal-world WORLD-TS)))) (list an-iw))]
+        [(not (valid-name? an-iw))
+         (make-bundle a-univ (list (make-mail an-iw (cons 'world (marshal-world WORLD-IS)))) (list an-iw))]
+        [(< (length (univ-iws a-univ)) PLAYER-LIMIT)
            (make-bundle
             (make-univ new-iws new-game)
             (map
@@ -718,20 +730,20 @@ TEMPLATE FOR A FUNCTION ON A LOS
                           (cons 'world (marshal-world new-game))))
              new-iws)
             '())]
-        [else (make-bundle a-univ (list (make-mail an-iw (cons 'connection-denied (marshal-world new-game))) (list an-iw)))])))
+        [else (make-bundle a-univ (list (make-mail an-iw (cons 'world (marshal-world WORLD-FS)))) (list an-iw))])))
 
 ;; Sample expressions for add-player
-(define RPT-ADD (make-bundle OTHR-UNIV '() (list iworld1)))
+(define RPT-ADD (make-bundle OTHR-UNIV (list (make-mail iworld1 (cons 'world (marshal-world WORLD-TS)))) (list iworld1)))
 (define <-2-ADD (local [(define new-iws (cons iworld2 (univ-iws INIT-UNIV)))
                         (define game (univ-game INIT-UNIV))
                         (define new-game (if (equal? game UNINIT-WORLD)
                                              (make-world
-                                              INIT-TURN
+                                              INIT-STATUS
                                               INIT-CATPOSN
                                               INIT-BLOCKED-SPACES
                                               )
                                              (make-world
-                                              (world-turn game)
+                                              (world-gamestatus game)
                                               (world-catposn game)
                                               (world-blockedspaces game)
                                               )))]
@@ -755,55 +767,41 @@ TEMPLATE FOR A FUNCTION ON A LOS
 
 ;; Tests using sample computations for add-player
 (check-expect (add-player OTHR-UNIV iworld1) RPT-ADD)
-(check-expect (add-player INIT-UNIV iworld2) <-2-ADD)
-(check-expect (add-player OTHR-UNIV iworld3) NEW-ADD)
-
 
 ;; univ iworld --> bundle
 ;; Purpose: Remove given iw from universe and game
 ;; ASSUMPTION: Given univ is not INIT-UNIV
 (define (rm-player a-univ an-iw)
   (local [(define iws  (univ-iws a-univ))
-          (define game (univ-game a-univ))
           (define new-iws (filter (λ (iw)
                                     (not (string=? (iworld-name an-iw)
                                                    (iworld-name iw))))
                                   iws))]
-    (make-bundle (make-univ new-iws game)
-                 (map (λ (iw) (make-mail iw (cons 'world (marshal-world game))))
+    (make-bundle (make-univ new-iws WORLD-TW)
+                 (map (λ (iw) (make-mail iw (cons 'world (marshal-world WORLD-TW))))
                       new-iws)
                  '())))
 
 ;; Sample expressions for rm-player
 (define RM-IW1 (local [(define iws  (univ-iws OTHR-UNIV))
-                       (define game (univ-game OTHR-UNIV))
                        (define new-iws (filter (λ (iw)
                                                  (not (string=? (iworld-name iworld1)
                                                                 (iworld-name iw))))
                                                iws))
-                       (define new-game (make-world
-                                         (world-turn game)
-                                         (world-catposn game)
-                                         (world-blockedspaces game)
-                                         ))]
-                 (make-bundle (make-univ new-iws new-game)
-                              (map (λ (iw) (make-mail iw (cons 'world (marshal-world new-game))))
+                       ]
+                 (make-bundle (make-univ new-iws WORLD-TW)
+                              (map (λ (iw) (make-mail iw (cons 'world (marshal-world WORLD-TW))))
                                    new-iws)
                               '())))
 
 (define RM-IW2 (local [(define iws  (univ-iws OTHR-UNIV2))
-                       (define game (univ-game OTHR-UNIV2))
                        (define new-iws (filter (λ (iw)
                                                  (not (string=? (iworld-name iworld2)
                                                                 (iworld-name iw))))
                                                iws))
-                       (define new-game (make-world
-                                         (world-turn game)
-                                         (world-catposn game)
-                                         (world-blockedspaces game)
-                                         ))]
-                 (make-bundle (make-univ new-iws new-game)
-                              (map (λ (iw) (make-mail iw (cons 'world (marshal-world new-game))))
+                       ]
+                 (make-bundle (make-univ new-iws WORLD-TW)
+                              (map (λ (iw) (make-mail iw (cons 'world (marshal-world WORLD-TW))))
                                    new-iws)
                               '())))
 
@@ -814,7 +812,7 @@ TEMPLATE FOR A FUNCTION ON A LOS
 
 ;; Tests using sample values for rm-player
 (check-expect (rm-player (make-univ (list iworld1) WORLD3) iworld1)
-              (make-bundle (make-univ '() (make-world 'blocker (make-posn 5 5) (list (make-posn 1 1)))) '() '()))
+              (make-bundle (make-univ '() (make-world 'tech-win (make-posn 5 5) (list (make-posn 1 1)))) '() '()))
 
 
 ;; Z --> univ

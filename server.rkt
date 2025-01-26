@@ -729,7 +729,7 @@ TEMPLATE FOR A FUNCTION ON A LOS
                                                    (iworld-name iw))))
                                   iws))]
     (make-bundle (make-univ new-iws (univ-game a-univ))
-                 (map (λ (iw) (make-mail iw (cons 'world (marshal-world (univ-game a-univ)))))
+                 (map (λ (iw) (make-mail iw (cons 'world (marshal-world WORLD-TW))))
                       new-iws)
                  '())))
 
@@ -741,7 +741,7 @@ TEMPLATE FOR A FUNCTION ON A LOS
                                                iws))
                        ]
                  (make-bundle (make-univ new-iws (univ-game OTHR-UNIV))
-                              (map (λ (iw) (make-mail iw (cons 'world (marshal-world (univ-game OTHR-UNIV)))))
+                              (map (λ (iw) (make-mail iw (cons 'world (marshal-world WORLD-TW))))
                                    new-iws)
                               '())))
 
@@ -752,7 +752,7 @@ TEMPLATE FOR A FUNCTION ON A LOS
                                                iws))
                        ]
                  (make-bundle (make-univ new-iws (univ-game OTHR-UNIV2))
-                              (map (λ (iw) (make-mail iw (cons 'world (marshal-world (univ-game OTHR-UNIV2)))))
+                              (map (λ (iw) (make-mail iw (cons 'world (marshal-world WORLD-TW))))
                                    new-iws)
                               '())))
 
@@ -762,8 +762,12 @@ TEMPLATE FOR A FUNCTION ON A LOS
 
 
 ;; Tests using sample values for rm-player
-(check-expect (rm-player (make-univ (list iworld1) WORLD3) iworld1)
-              (make-bundle (make-univ '() (make-world 'tech-win (make-posn 5 5) (list (make-posn 1 1)))) '() '()))
+(check-expect (rm-player (make-univ (list iworld1 iworld2) WORLD3) iworld1)
+              (make-bundle (make-univ (list iworld2) (univ-game (make-univ '() (make-world 'blocker (make-posn 5 5) (list (make-posn 1 1))))))
+                              (map (λ (iw) (make-mail iw (cons 'world (marshal-world WORLD-TW))))
+                                   (list iworld2))
+                              '()))
+              
 
 
 ;; Z --> univ

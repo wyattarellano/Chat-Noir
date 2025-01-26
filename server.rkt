@@ -728,8 +728,8 @@ TEMPLATE FOR A FUNCTION ON A LOS
                                     (not (string=? (iworld-name an-iw)
                                                    (iworld-name iw))))
                                   iws))]
-    (make-bundle (make-univ new-iws WORLD-TW)
-                 (map (λ (iw) (make-mail iw (cons 'world (marshal-world WORLD-TW))))
+    (make-bundle (make-univ new-iws (univ-game a-univ))
+                 (map (λ (iw) (make-mail iw (cons 'world (marshal-world (univ-game a-univ)))))
                       new-iws)
                  '())))
 
@@ -740,8 +740,8 @@ TEMPLATE FOR A FUNCTION ON A LOS
                                                                 (iworld-name iw))))
                                                iws))
                        ]
-                 (make-bundle (make-univ new-iws WORLD-TW)
-                              (map (λ (iw) (make-mail iw (cons 'world (marshal-world WORLD-TW))))
+                 (make-bundle (make-univ new-iws (univ-game OTHR-UNIV))
+                              (map (λ (iw) (make-mail iw (cons 'world (marshal-world (univ-game OTHR-UNIV)))))
                                    new-iws)
                               '())))
 
@@ -751,8 +751,8 @@ TEMPLATE FOR A FUNCTION ON A LOS
                                                                 (iworld-name iw))))
                                                iws))
                        ]
-                 (make-bundle (make-univ new-iws WORLD-TW)
-                              (map (λ (iw) (make-mail iw (cons 'world (marshal-world WORLD-TW))))
+                 (make-bundle (make-univ new-iws (univ-game OTHR-UNIV2))
+                              (map (λ (iw) (make-mail iw (cons 'world (marshal-world (univ-game OTHR-UNIV2)))))
                                    new-iws)
                               '())))
 

@@ -71,11 +71,11 @@ A pixel-Y is an integer in [0 .. E-SCENE-H - 1]
 ;; sample instances of gamestatus
 
 (define INIT-STATUS 'blocker) 
-(define CAT-STATUS 'cat)
-(define BLOCKER-STATUS 'blocker)
-(define TAKEN-STATUS 'name-taken)
-(define TECH-WIN-STATUS 'tech-win)
-(define INVALID-STATUS 'invalid)
+(define CAT-TURN 'cat)
+(define BLOCKER-TURN 'blocker)
+(define NAME-TAKEN 'name-taken)
+(define TECH-WIN 'tech-win)
+(define INVALID 'invalid)
 
 
 ;; making templates for catposn, a space, and an los
@@ -209,14 +209,14 @@ TEMPLATE FOR A FUNCTION ON A LOS
 ;; sample instances of a world
 (define UNINIT-WORLD 'uninitialized)
 (define INIT-WORLD (make-world INIT-STATUS INIT-CATPOSN INIT-BLOCKED-SPACES))
-(define WORLD2 (make-world CAT-STATUS CAT-POSN2 INIT-BLOCKED-SPACES2))
-(define WORLD3 (make-world BLOCKER-STATUS (make-posn 5 5) (list (make-posn 1 1))))
-(define WORLD4 (make-world CAT-STATUS (make-posn 3 3) INIT-BLOCKED-SPACES3))
-(define WORLD5 (make-world BLOCKER-STATUS (make-posn 0 3) INIT-BLOCKED-SPACES))
-(define WORLD6 (make-world CAT-STATUS (make-posn 5 5) (list (make-posn 1 1))))
-(define WORLD-TS (make-world TAKEN-STATUS (make-posn 5 5) (list (make-posn 1 1))))
-(define WORLD-TW (make-world TECH-WIN-STATUS (make-posn 5 5) (list (make-posn 1 1))))
-(define WORLD-IS (make-world INVALID-STATUS (make-posn 5 5) (list (make-posn 1 1))))
+(define WORLD2 (make-world CAT-TURN CAT-POSN2 INIT-BLOCKED-SPACES2))
+(define WORLD3 (make-world BLOCKER-TURN (make-posn 5 5) (list (make-posn 1 1))))
+(define WORLD4 (make-world CAT-TURN (make-posn 3 3) INIT-BLOCKED-SPACES3))
+(define WORLD5 (make-world BLOCKER-TURN (make-posn 0 3) INIT-BLOCKED-SPACES))
+(define WORLD6 (make-world CAT-TURN (make-posn 5 5) (list (make-posn 1 1))))
+(define WORLD-TS (make-world NAME-TAKEN (make-posn 5 5) (list (make-posn 1 1))))
+(define WORLD-TW (make-world TECH-WIN (make-posn 5 5) (list (make-posn 1 1))))
+(define WORLD-IS (make-world INVALID (make-posn 5 5) (list (make-posn 1 1))))
 
 ;; A world is either
 ;;  1. 'uninitialized
@@ -435,7 +435,7 @@ TEMPLATE FOR A FUNCTION ON A LOS
                               (define (not-blocked-space? a-posn a-los)
                                 (not (ormap (λ (blocked-space) (equal? a-posn blocked-space)) a-los)))
 
-                               ;; image-x --> pixel-x
+                              ;; image-x --> pixel-x
                               ;; Purpose: To translate the given image-x to a pixel-x
                               (define (image-x->pix-x ix)
                                 (+ (* ix IMAGE-WIDTH) HALF-IMG-W))
@@ -539,49 +539,49 @@ TEMPLATE FOR A FUNCTION ON A LOS
 
 
                               ;; number -> boolean
-                               ;; Purpose: Determine if row is even
-                               (define (even-row? mouse-y)
-                                 (even? (round (/ (- mouse-y PIX-OF-IMG-0) IMAGE-HEIGHT))))
+                              ;; Purpose: Determine if row is even
+                              (define (even-row? mouse-y)
+                                (even? (round (/ (- mouse-y PIX-OF-IMG-0) IMAGE-HEIGHT))))
 
                               
-                               ;;number number -> posn
-                               ;;Purpose: Make a posn based on their Y posn
-                               (define (even-posn mouse-x mouse-y)
-                                 (make-posn (+ (floor (/ (- mouse-x PIX-OF-IMG-0) IMAGE-WIDTH)) OFFSET-VALUE)
-                                            (round (/ (- mouse-y PIX-OF-IMG-0) IMAGE-HEIGHT))))
+                              ;;number number -> posn
+                              ;;Purpose: Make a posn based on their Y posn
+                              (define (even-posn mouse-x mouse-y)
+                                (make-posn (+ (floor (/ (- mouse-x PIX-OF-IMG-0) IMAGE-WIDTH)) OFFSET-VALUE)
+                                           (round (/ (- mouse-y PIX-OF-IMG-0) IMAGE-HEIGHT))))
                                
                                
-                               ;;number number -> posn
-                               ;;Purpose: Make a posn based on their Y posn
-                               (define (odd-posn mouse-x mouse-y)
-                                 (make-posn (round (/ (- mouse-x PIX-OF-IMG-0) IMAGE-WIDTH))
-                                            (round (/ (- mouse-y PIX-OF-IMG-0) IMAGE-HEIGHT))))
+                              ;;number number -> posn
+                              ;;Purpose: Make a posn based on their Y posn
+                              (define (odd-posn mouse-x mouse-y)
+                                (make-posn (round (/ (- mouse-x PIX-OF-IMG-0) IMAGE-WIDTH))
+                                           (round (/ (- mouse-y PIX-OF-IMG-0) IMAGE-HEIGHT))))
 
 
-                                ;;number number -> posn
-                               ;;Purpose: Make a posn
-                               (define (block-space game mouse-x mouse-y)
-                                 (if (even-row? mouse-y)
-                                     (cons (even-posn mouse-x mouse-y) (world-blockedspaces game))
-                                     (cons (odd-posn mouse-x mouse-y) (world-blockedspaces game))))]
+                              ;;number number -> posn
+                              ;;Purpose: Make a posn
+                              (define (block-space game mouse-x mouse-y)
+                                (if (even-row? mouse-y)
+                                    (cons (even-posn mouse-x mouse-y) (world-blockedspaces game))
+                                    (cons (odd-posn mouse-x mouse-y) (world-blockedspaces game))))]
 
                         
                         (cond [(equal? (world-gamestatus game) 'cat)
                                (make-world 'blocker (move-cat game mouse-x mouse-y) (world-blockedspaces game))]
                               [(equal? (world-gamestatus game) 'blocker)
                                (make-world 'cat (world-catposn game) (block-space game mouse-x mouse-y))])))]
-                              ;;[else game])))]
+              ;;[else game])))]
                        
               
-                    (make-bundle (make-univ (univ-iws a-univ) (new-world mouse-x mouse-y))
-                                 (map (λ (iw)
-                                        (make-mail iw (cons 'world (marshal-world (new-world mouse-x mouse-y)))))
-                                      (univ-iws a-univ))
-                                 '())))]
-          (if (eq? tag 'click)
-              (process-mouse-click (second a-tsm) (third a-tsm))
-              (error (format "Unknown to-server message type ~s"
-                             a-tsm)))))
+              (make-bundle (make-univ (univ-iws a-univ) (new-world mouse-x mouse-y))
+                           (map (λ (iw)
+                                  (make-mail iw (cons 'world (marshal-world (new-world mouse-x mouse-y)))))
+                                (univ-iws a-univ))
+                           '())))]
+    (if (eq? tag 'click)
+        (process-mouse-click (second a-tsm) (third a-tsm))
+        (error (format "Unknown to-server message type ~s"
+                       a-tsm)))))
 
 
 
@@ -656,24 +656,24 @@ TEMPLATE FOR A FUNCTION ON A LOS
             (or (equal? (iworld-name an-iw) "cat")
                 (equal? (iworld-name an-iw) "blocker")))
           (define new-iws (cons an-iw (univ-iws a-univ)))
-                 (define game (univ-game a-univ))
-                 (define new-game (if (equal? game UNINIT-WORLD)
-                                      (make-world
-                                       INIT-STATUS
-                                       INIT-CATPOSN
-                                       INIT-BLOCKED-SPACES
-                                       )
-                                      (make-world
-                                       (world-gamestatus game)
-                                       (world-catposn game)
-                                       (world-blockedspaces game)
-                                       )))]   
+          (define game (univ-game a-univ))
+          (define new-game (if (equal? game UNINIT-WORLD)
+                               (make-world
+                                INIT-STATUS
+                                INIT-CATPOSN
+                                INIT-BLOCKED-SPACES
+                                )
+                               (make-world
+                                (world-gamestatus game)
+                                (world-catposn game)
+                                (world-blockedspaces game)
+                                )))]   
     
-  (cond [(member? (iworld-name an-iw) (map iworld-name (univ-iws a-univ)))
-         (make-bundle a-univ (list (make-mail an-iw (cons 'world (marshal-world WORLD-TS)))) (list an-iw))]
-        [(not (valid-name? an-iw))
-         (make-bundle a-univ (list (make-mail an-iw (cons 'world (marshal-world WORLD-IS)))) (list an-iw))]
-        [else
+    (cond [(member? (iworld-name an-iw) (map iworld-name (univ-iws a-univ)))
+           (make-bundle a-univ (list (make-mail an-iw (cons 'world (marshal-world WORLD-TS)))) (list an-iw))]
+          [(not (valid-name? an-iw))
+           (make-bundle a-univ (list (make-mail an-iw (cons 'world (marshal-world WORLD-IS)))) (list an-iw))]
+          [else
            (make-bundle
             (make-univ new-iws new-game)
             (map
@@ -727,11 +727,130 @@ TEMPLATE FOR A FUNCTION ON A LOS
           (define new-iws (filter (λ (iw)
                                     (not (string=? (iworld-name an-iw)
                                                    (iworld-name iw))))
-                                  iws))]
-    (make-bundle (make-univ new-iws (univ-game a-univ))
-                 (map (λ (iw) (make-mail iw (cons 'world (marshal-world (univ-game a-univ)))))
-                      new-iws)
-                 '())))
+                                  iws))
+          ;;posn world -> los
+          ;;Purpose: To create a list of the spaces that have any open adjacent spaces
+          (define (open-adjacent a-posn a-world)
+            (local [;; posn -> boolean
+                    ;; Purpose: To determine if the space to the left of the posn is an open space
+                    (define (left-space? a-posn a-posn2)
+                      (and (= (sub1 (posn-x a-posn)) (posn-x a-posn2))
+                           (= (posn-y a-posn) (posn-y a-posn2))))
+
+                    ;; posn -> boolean
+                    ;; Purpose: To determine if the space to the right of the posn is an open space
+                    (define (right-space? a-posn a-posn2)
+                      (and (= (add1 (posn-x a-posn)) (posn-x a-posn2))
+                           (= (posn-y a-posn) (posn-y a-posn2))))
+
+                    ;; posn -> boolean
+                    ;; Purpose: To determine if the space top left of the posn is an open space
+                    (define (top-left-space? a-posn a-posn2)
+                      (and (= (- (posn-x a-posn) OFFSET-VALUE) (posn-x a-posn2))
+                           (= (add1 (posn-y a-posn)) (posn-y a-posn2))))
+
+                    ;; posn -> boolean
+                    ;; Purpose: To determine if the space top left of the posn is an open space
+                    (define (top-right-space? a-posn a-posn2)
+                      (and (equal? (+ (posn-x a-posn) OFFSET-VALUE) (posn-x a-posn2))
+                           (equal? (add1 (posn-y a-posn)) (posn-y a-posn2))))
+
+                    ;; posn -> boolean
+                    ;; Purpose: To determine if the space bottom left of the posn is an open space
+                    (define (bottom-left-space? a-posn a-posn2)
+                      (and (equal? (- (posn-x a-posn) OFFSET-VALUE) (posn-x a-posn2))
+                           (equal? (sub1 (posn-y a-posn)) (posn-y a-posn2))))
+
+                    ;; posn -> boolean
+                    ;; Purpose: To determine if the space top left of the posn is an open space
+                    (define (bottom-right-space? a-posn a-posn2)
+                      (and (equal? (+ (posn-x a-posn) OFFSET-VALUE) (posn-x a-posn2))
+                           (equal? (sub1 (posn-y a-posn)) (posn-y a-posn2))))
+
+                    ;; posn los -> Boolean
+                    ;; Purpose: To determine if the given space is not a blocked space
+                    (define (not-blocked-space? a-posn a-world)
+                      (not (ormap (λ (blocked-space) (equal? a-posn blocked-space)) (world-blockedspaces a-world))))
+
+                    ;;posn -> boolean
+                    ;;Purpose: To determine if there is an adjacent space
+                    (define (adjacent-space? a-posn a-posn2)
+                      (or (bottom-right-space? a-posn a-posn2)
+                          (bottom-left-space? a-posn a-posn2)
+                          (left-space? a-posn a-posn2)
+                          (top-left-space? a-posn a-posn2)
+                          (top-right-space? a-posn a-posn2)
+                          (right-space? a-posn a-posn2)))]
+
+              (filter (λ (posn) (and  (not-blocked-space? posn a-world)
+                                      (adjacent-space? a-posn posn))) space-list)))
+          ;;qos los visited world -> boolean
+          ;;Purpose: To determine if the cat has a route to escape
+          (define (cat-can-escape? a-qos visited a-world)  
+            (if (empty? a-qos)
+                #false
+                (local [;; world -> Boolean
+                        ;; Purpose: To determine if the cat reached an edge
+                        (define (posn-at-edge? a-posn)                
+                          (or (= (posn-x a-posn) MIN-IMAGE-X-EVEN)
+                              (= (posn-x a-posn) MAX-IMAGE-X-EVEN)
+                              (= (posn-x a-posn) MIN-IMAGE-X-ODD)
+                              (= (posn-x a-posn) MAX-IMAGE-X-ODD)
+                              (= (posn-y a-posn) MIN-IMAGE-Y)
+                              (= (posn-y a-posn) MAX-IMAGE-Y)))
+
+                        ;;qos world -> los
+                        ;;Purpose: To remove the adjacent spaces that were already visited
+                        (define (rmv-visited a-qos a-world)
+                          (filter (λ (adjacent) (not (member? adjacent visited))) (open-adjacent (Qfirst a-qos) a-world)))
+
+                        (define qempty? empty?)
+         
+                        ;; qos -> X throws error
+                        ;; Purpose: Return first X of the given queue
+                        (define (Qfirst a-qox)
+                          (if (qempty? a-qox)
+                              (error "Qfirst applied to an empty queue")
+                              (first a-qox)))
+                        ;; (listof X) (qof X) -> (qof X)
+                        ;; Purpose: Add the given list of X to the given queue of X
+                        (define (enqueue a-lox a-qox)
+                          (append a-qox a-lox))
+
+                        ;;(qof X) -> (qof X)
+                        ;; Purpose: Return the rest of the given queue
+                        (define (dequeue a-qox)
+                          (if (qempty? a-qox)
+                              (error "dequeue applied to an empty queue")
+                              (rest a-qox)))
+                        ]
+                  (if (ormap posn-at-edge? (rmv-visited a-qos a-world))
+                      #true
+                      (cat-can-escape? (enqueue (rmv-visited a-qos a-world) (dequeue a-qos))
+                                       (cons (Qfirst a-qos) visited) a-world)))))
+          ;; world -> Boolean
+          ;; Purpose: To determine if the cat reached an edge
+          (define (cat-reached-an-edge? a-world)
+            (local [(define CATPOSN (world-catposn a-world))]
+              (or (= (posn-x CATPOSN) MIN-IMAGE-X-EVEN)
+                  (= (posn-x CATPOSN) MAX-IMAGE-X-EVEN)
+                  (= (posn-x CATPOSN) MIN-IMAGE-X-ODD)
+                  (= (posn-x CATPOSN) MAX-IMAGE-X-ODD)
+                  (= (posn-y CATPOSN) MIN-IMAGE-Y)
+                  (= (posn-y CATPOSN) MAX-IMAGE-Y))))]
+    (if (or (cat-reached-an-edge? (univ-game a-univ))
+            (not (cat-can-escape? (open-adjacent (world-catposn (univ-game a-univ)) (univ-game a-univ)) '() (univ-game a-univ))))
+        (make-bundle (make-univ new-iws (univ-game a-univ))
+                     (map (λ (iw) (make-mail iw (cons 'world (marshal-world (univ-game a-univ)))))
+                          new-iws)
+                     '())
+        (make-bundle (make-univ new-iws (univ-game a-univ))
+                     (map (λ (iw) (make-mail iw (cons 'world (marshal-world
+                                                              (make-world TECH-WIN
+                                                                          (world-catposn (univ-game a-univ))
+                                                                          (world-blockedspaces (univ-game a-univ)))))))
+                            new-iws)
+                          '()))))
 
 ;; Sample expressions for rm-player
 (define RM-IW1 (local [(define iws  (univ-iws OTHR-UNIV))
@@ -764,9 +883,9 @@ TEMPLATE FOR A FUNCTION ON A LOS
 ;; Tests using sample values for rm-player
 (check-expect (rm-player (make-univ (list iworld1 iworld2) WORLD3) iworld1)
               (make-bundle (make-univ (list iworld2) (univ-game (make-univ '() (make-world 'blocker (make-posn 5 5) (list (make-posn 1 1))))))
-                              (map (λ (iw) (make-mail iw (cons 'world (marshal-world (make-world 'blocker (make-posn 5 5) (list (make-posn 1 1)))))))
-                                   (list iworld2))
-                              '()))
+                           (map (λ (iw) (make-mail iw (cons 'world (marshal-world (make-world 'blocker (make-posn 5 5) (list (make-posn 1 1)))))))
+                                (list iworld2))
+                           '()))
               
 
 

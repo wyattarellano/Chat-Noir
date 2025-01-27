@@ -451,165 +451,159 @@ TEMPLATE FOR A FUNCTION ON A LOS
   (local [(define tag (first a-tsm))
           (define name (iworld-name an-iw))
           (define game (univ-game a-univ))
+          ;; Functions that determine which tile is clicked
+
+          ;; posn los -> Boolean
+          ;; Purpose: To determine if the given space is not a blocked space
+          (define (not-blocked-space? a-posn a-los)
+            (not (ormap (λ (blocked-space) (equal? a-posn blocked-space)) a-los)))
+
+          ;; image-x --> pixel-x
+          ;; Purpose: To translate the given image-x to a pixel-x
+          (define (image-x->pix-x ix)
+            (+ (* ix IMAGE-WIDTH) HALF-IMG-W))
+
+          ;; image-y --> pixel-y
+          ;; Purpose: To translate the given image-y to a pixel-y
+          (define (image-y->pix-y iy)
+            (+ (* iy IMAGE-HEIGHT) HALF-IMG-W))
+
+          ;; world number number -> Boolean
+          ;; Purpose: To determine if the mouse click is on the space to the left of the cat
+          (define (click-is-left? a-world m-x m-y)
+            (and (<= (image-y->pix-y (- (posn-y (world-catposn a-world)) OFFSET-VALUE))
+                     m-y
+                     (image-y->pix-y (+ (posn-y (world-catposn a-world)) OFFSET-VALUE)))
+                 (<= (image-x->pix-x (- (posn-x (world-catposn a-world)) OFFSET-RANGE+))
+                     m-x
+                     (image-x->pix-x (- (posn-x (world-catposn a-world)) OFFSET-VALUE)))))
+
+          ;; world number number -> Boolean
+          ;; Purpose: To determine if the mouse click is on the space to the right of the cat
+          (define (click-is-right? a-world m-x m-y)
+            (and (<= (image-y->pix-y (- (posn-y (world-catposn a-world)) OFFSET-VALUE))
+                     m-y
+                     (image-y->pix-y (+ (posn-y (world-catposn a-world)) OFFSET-VALUE)))
+                 (<= (image-x->pix-x (+ (posn-x (world-catposn a-world)) OFFSET-VALUE))
+                     m-x
+                     (image-x->pix-x (+ (posn-x (world-catposn a-world)) OFFSET-RANGE+)))))
+
+          ;; world number number -> Boolean
+          ;; Purpose: To determine if the mouse click is on the space top right of the cat
+          (define (click-is-top-right? a-world m-x m-y)
+            (and (<= (image-y->pix-y (- (posn-y (world-catposn a-world)) OFFSET-RANGE+))
+                     m-y
+                     (image-y->pix-y (- (posn-y (world-catposn a-world)) OFFSET-VALUE)))
+                 (<= (image-x->pix-x (posn-x (world-catposn a-world)))
+                     m-x
+                     (image-x->pix-x (+ (posn-x (world-catposn a-world)) OFFSET-RANGE)))))
+
+          ;; world number number -> Boolean
+          ;; Purpose: To determine if the mouse click is on the space top left of the cat
+          (define (click-is-top-left? a-world m-x m-y)
+            (and (<= (image-y->pix-y (- (posn-y (world-catposn a-world)) OFFSET-RANGE+))
+                     m-y
+                     (image-y->pix-y (- (posn-y (world-catposn a-world)) OFFSET-VALUE)))
+                 (<= (image-x->pix-x (- (posn-x (world-catposn a-world)) OFFSET-RANGE))
+                     m-x
+                     (image-x->pix-x (posn-x (world-catposn a-world))))))
+
+          ;; world number number -> Boolean
+          ;; Purpose: To determine if the mouse click is on the space bottom left of the cat
+          (define (click-is-bottom-left? a-world m-x m-y)
+            (and (<= (image-y->pix-y (+ (posn-y (world-catposn a-world)) OFFSET-VALUE))
+                     m-y
+                     (image-y->pix-y (+ (posn-y (world-catposn a-world)) OFFSET-RANGE+)))
+                 (<= (image-x->pix-x (- (posn-x (world-catposn a-world)) OFFSET-RANGE))
+                     m-x
+                     (image-x->pix-x (posn-x (world-catposn a-world))))))
+
+          ;; world number number -> Boolean
+          ;; Purpose: To determine if the mouse click is on the space bottom right of the cat
+          (define (click-is-bottom-right? a-world m-x m-y)
+            (and (<= (image-y->pix-y (+ (posn-y (world-catposn a-world)) OFFSET-VALUE))
+                     m-y
+                     (image-y->pix-y (+ (posn-y (world-catposn a-world)) OFFSET-RANGE+)))
+                 (<= (image-x->pix-x (posn-x (world-catposn a-world)))
+                     m-x
+                     (image-x->pix-x (+ (posn-x (world-catposn a-world)) OFFSET-RANGE)))))
+
+          ;; number -> boolean
+          ;; Purpose: Determine if row is even
+          (define (even-row? mouse-y)
+            (even? (round (/ (- mouse-y PIX-OF-IMG-0) IMAGE-HEIGHT))))
+
+                              
+          ;;number number -> posn
+          ;;Purpose: Make a posn based on their Y posn
+          (define (even-posn mouse-x mouse-y)
+            (make-posn (+ (floor (/ (- mouse-x PIX-OF-IMG-0) IMAGE-WIDTH)) OFFSET-VALUE)
+                       (round (/ (- mouse-y PIX-OF-IMG-0) IMAGE-HEIGHT))))
+                               
+                               
+          ;;number number -> posn
+          ;;Purpose: Make a posn based on their Y posn
+          (define (odd-posn mouse-x mouse-y)
+            (make-posn (round (/ (- mouse-x PIX-OF-IMG-0) IMAGE-WIDTH))
+                       (round (/ (- mouse-y PIX-OF-IMG-0) IMAGE-HEIGHT))))
+
+
+          ;;number number -> posn
+          ;;Purpose: Make a posn
+          (define (block-space game mouse-x mouse-y)
+            (if (even-row? mouse-y)
+                (cons (even-posn mouse-x mouse-y) (world-blockedspaces game))
+                (cons (odd-posn mouse-x mouse-y) (world-blockedspaces game))))
 
           ;; number number  --> bundle
           ;; Purpose: Process a mouse event to return next world
           (define (process-mouse-click mouse-x mouse-y)
-            (local [;; number number -> world
-                    ;; Purpose: Make a new world
-                    (define (new-world mouse-x mouse-y)
-                      (local [;; posn los -> Boolean
-                              ;; Purpose: To determine if the given space is not a blocked space
-                              (define (not-blocked-space? a-posn a-los)
-                                (not (ormap (λ (blocked-space) (equal? a-posn blocked-space)) a-los)))
+            (make-bundle (make-univ (univ-iws a-univ) (new-world mouse-x mouse-y))
+                         (map (λ (iw)
+                                (make-mail iw (cons 'world (marshal-world (new-world mouse-x mouse-y)))))
+                              (univ-iws a-univ)) '()))
+          ;; number number -> world
+          ;; Purpose: Make a new world
+          (define (new-world mouse-x mouse-y)
+            (cond [(equal? (world-gamestatus game) 'cat)
+                   (make-world 'blocker (move-cat game mouse-x mouse-y) (world-blockedspaces game))]
+                  [(equal? (world-gamestatus game) 'blocker)
+                   (make-world 'cat (world-catposn game) (block-space game mouse-x mouse-y))]
+                  [else game]))
 
-                              ;; image-x --> pixel-x
-                              ;; Purpose: To translate the given image-x to a pixel-x
-                              (define (image-x->pix-x ix)
-                                (+ (* ix IMAGE-WIDTH) HALF-IMG-W))
+          ;; world number number -> posn
+          ;; Purpose: Move the cat
+          (define (move-cat a-world mouse-x mouse-y)
+            (cond [(and (click-is-left? a-world mouse-x mouse-y)
+                        (not-blocked-space? (make-posn (sub1 (posn-x (world-catposn a-world))) (posn-y (world-catposn a-world)))
+                                            (world-blockedspaces a-world)))
+                   (make-posn (sub1 (posn-x (world-catposn a-world))) (posn-y (world-catposn a-world)))]
+                  [(and (click-is-right? a-world mouse-x mouse-y)
+                        (not-blocked-space? (make-posn (add1 (posn-x (world-catposn a-world))) (posn-y (world-catposn a-world)))
+                                            (world-blockedspaces a-world)))
+                   (make-posn (add1 (posn-x (world-catposn a-world))) (posn-y (world-catposn a-world)))]
+                  [(and (click-is-top-left? a-world mouse-x mouse-y)
+                        (not-blocked-space? (make-posn (- (posn-x (world-catposn a-world)) OFFSET-VALUE) (sub1 (posn-y (world-catposn a-world))))
+                                            (world-blockedspaces a-world)))
+                   (make-posn (- (posn-x (world-catposn a-world)) OFFSET-VALUE) (sub1 (posn-y (world-catposn a-world))))]
+                  [(and (click-is-top-right? a-world mouse-x mouse-y)
+                        (not-blocked-space? (make-posn (+ (posn-x (world-catposn a-world)) OFFSET-VALUE) (sub1 (posn-y (world-catposn a-world))))
+                                            (world-blockedspaces a-world)))
+                   (make-posn (+ (posn-x (world-catposn a-world)) OFFSET-VALUE) (sub1 (posn-y (world-catposn a-world))))]
+                  [(and (click-is-bottom-left? a-world mouse-x mouse-y)
+                        (not-blocked-space? (make-posn (- (posn-x (world-catposn a-world)) OFFSET-VALUE) (add1 (posn-y (world-catposn a-world))))
+                                            (world-blockedspaces a-world)))
+                   (make-posn (- (posn-x (world-catposn a-world)) OFFSET-VALUE) (add1 (posn-y (world-catposn a-world))))]
+                  [(and (click-is-bottom-right? a-world mouse-x mouse-y)
+                        (not-blocked-space? (make-posn (+ (posn-x (world-catposn a-world)) OFFSET-VALUE) (add1 (posn-y (world-catposn a-world))))
+                                            (world-blockedspaces a-world)))
+                   (make-posn (+ (posn-x (world-catposn a-world)) OFFSET-VALUE) (add1 (posn-y (world-catposn a-world))))]
+                  [else (world-catposn a-world)]))]
 
-                              ;; image-y --> pixel-y
-                              ;; Purpose: To translate the given image-y to a pixel-y
-                              (define (image-y->pix-y iy)
-                                (+ (* iy IMAGE-HEIGHT) HALF-IMG-W))
-
-                              ;; world number number -> posn
-                              ;; Purpose: Move the cat
-                              (define (move-cat a-world mouse-x mouse-y)
-                                (local [;; Functions that determine which tile is clicked
-
-                                        ;; world number number -> Boolean
-                                        ;; Purpose: To determine if the mouse click is on the space to the left of the cat
-                                        (define (click-is-left? a-world m-x m-y)
-                                          (and (<= (image-y->pix-y (- (posn-y (world-catposn a-world)) OFFSET-VALUE))
-                                                   m-y
-                                                   (image-y->pix-y (+ (posn-y (world-catposn a-world)) OFFSET-VALUE)))
-                                               (<= (image-x->pix-x (- (posn-x (world-catposn a-world)) OFFSET-RANGE+))
-                                                   m-x
-                                                   (image-x->pix-x (- (posn-x (world-catposn a-world)) OFFSET-VALUE)))))
-
-                                        ;; world number number -> Boolean
-                                        ;; Purpose: To determine if the mouse click is on the space to the right of the cat
-                                        (define (click-is-right? a-world m-x m-y)
-                                          (and (<= (image-y->pix-y (- (posn-y (world-catposn a-world)) OFFSET-VALUE))
-                                                   m-y
-                                                   (image-y->pix-y (+ (posn-y (world-catposn a-world)) OFFSET-VALUE)))
-                                               (<= (image-x->pix-x (+ (posn-x (world-catposn a-world)) OFFSET-VALUE))
-                                                   m-x
-                                                   (image-x->pix-x (+ (posn-x (world-catposn a-world)) OFFSET-RANGE+)))))
-
-                                        ;; world number number -> Boolean
-                                        ;; Purpose: To determine if the mouse click is on the space top right of the cat
-                                        (define (click-is-top-right? a-world m-x m-y)
-                                          (and (<= (image-y->pix-y (- (posn-y (world-catposn a-world)) OFFSET-RANGE+))
-                                                   m-y
-                                                   (image-y->pix-y (- (posn-y (world-catposn a-world)) OFFSET-VALUE)))
-                                               (<= (image-x->pix-x (posn-x (world-catposn a-world)))
-                                                   m-x
-                                                   (image-x->pix-x (+ (posn-x (world-catposn a-world)) OFFSET-RANGE)))))
-
-                                        ;; world number number -> Boolean
-                                        ;; Purpose: To determine if the mouse click is on the space top left of the cat
-                                        (define (click-is-top-left? a-world m-x m-y)
-                                          (and (<= (image-y->pix-y (- (posn-y (world-catposn a-world)) OFFSET-RANGE+))
-                                                   m-y
-                                                   (image-y->pix-y (- (posn-y (world-catposn a-world)) OFFSET-VALUE)))
-                                               (<= (image-x->pix-x (- (posn-x (world-catposn a-world)) OFFSET-RANGE))
-                                                   m-x
-                                                   (image-x->pix-x (posn-x (world-catposn a-world))))))
-
-                                        ;; world number number -> Boolean
-                                        ;; Purpose: To determine if the mouse click is on the space bottom left of the cat
-                                        (define (click-is-bottom-left? a-world m-x m-y)
-                                          (and (<= (image-y->pix-y (+ (posn-y (world-catposn a-world)) OFFSET-VALUE))
-                                                   m-y
-                                                   (image-y->pix-y (+ (posn-y (world-catposn a-world)) OFFSET-RANGE+)))
-                                               (<= (image-x->pix-x (- (posn-x (world-catposn a-world)) OFFSET-RANGE))
-                                                   m-x
-                                                   (image-x->pix-x (posn-x (world-catposn a-world))))))
-
-                                        ;; world number number -> Boolean
-                                        ;; Purpose: To determine if the mouse click is on the space bottom right of the cat
-                                        (define (click-is-bottom-right? a-world m-x m-y)
-                                          (and (<= (image-y->pix-y (+ (posn-y (world-catposn a-world)) OFFSET-VALUE))
-                                                   m-y
-                                                   (image-y->pix-y (+ (posn-y (world-catposn a-world)) OFFSET-RANGE+)))
-                                               (<= (image-x->pix-x (posn-x (world-catposn a-world)))
-                                                   m-x
-                                                   (image-x->pix-x (+ (posn-x (world-catposn a-world)) OFFSET-RANGE)))))]
-                                  
-                                  (cond [(and (click-is-left? a-world mouse-x mouse-y)
-                                              (not-blocked-space? (make-posn (sub1 (posn-x (world-catposn a-world))) (posn-y (world-catposn a-world)))
-                                                                  (world-blockedspaces a-world)))
-                                         (make-posn (sub1 (posn-x (world-catposn a-world))) (posn-y (world-catposn a-world)))]
-                                        [(and (click-is-right? a-world mouse-x mouse-y)
-                                              (not-blocked-space? (make-posn (add1 (posn-x (world-catposn a-world))) (posn-y (world-catposn a-world)))
-                                                                  (world-blockedspaces a-world)))
-                                         (make-posn (add1 (posn-x (world-catposn a-world))) (posn-y (world-catposn a-world)))]
-                                        [(and (click-is-top-left? a-world mouse-x mouse-y)
-                                              (not-blocked-space? (make-posn (- (posn-x (world-catposn a-world)) OFFSET-VALUE) (sub1 (posn-y (world-catposn a-world))))
-                                                                  (world-blockedspaces a-world)))
-                                         (make-posn (- (posn-x (world-catposn a-world)) OFFSET-VALUE) (sub1 (posn-y (world-catposn a-world))))]
-                                        [(and (click-is-top-right? a-world mouse-x mouse-y)
-                                              (not-blocked-space? (make-posn (+ (posn-x (world-catposn a-world)) OFFSET-VALUE) (sub1 (posn-y (world-catposn a-world))))
-                                                                  (world-blockedspaces a-world)))
-                                         (make-posn (+ (posn-x (world-catposn a-world)) OFFSET-VALUE) (sub1 (posn-y (world-catposn a-world))))]
-                                        [(and (click-is-bottom-left? a-world mouse-x mouse-y)
-                                              (not-blocked-space? (make-posn (- (posn-x (world-catposn a-world)) OFFSET-VALUE) (add1 (posn-y (world-catposn a-world))))
-                                                                  (world-blockedspaces a-world)))
-                                         (make-posn (- (posn-x (world-catposn a-world)) OFFSET-VALUE) (add1 (posn-y (world-catposn a-world))))]
-                                        [(and (click-is-bottom-right? a-world mouse-x mouse-y)
-                                              (not-blocked-space? (make-posn (+ (posn-x (world-catposn a-world)) OFFSET-VALUE) (add1 (posn-y (world-catposn a-world))))
-                                                                  (world-blockedspaces a-world)))
-                                         (make-posn (+ (posn-x (world-catposn a-world)) OFFSET-VALUE) (add1 (posn-y (world-catposn a-world))))]
-                                        [else (world-catposn a-world)])
-                                  ))
-
-
-                              ;; number -> boolean
-                              ;; Purpose: Determine if row is even
-                              (define (even-row? mouse-y)
-                                (even? (round (/ (- mouse-y PIX-OF-IMG-0) IMAGE-HEIGHT))))
-
-                              
-                              ;;number number -> posn
-                              ;;Purpose: Make a posn based on their Y posn
-                              (define (even-posn mouse-x mouse-y)
-                                (make-posn (+ (floor (/ (- mouse-x PIX-OF-IMG-0) IMAGE-WIDTH)) OFFSET-VALUE)
-                                           (round (/ (- mouse-y PIX-OF-IMG-0) IMAGE-HEIGHT))))
-                               
-                               
-                              ;;number number -> posn
-                              ;;Purpose: Make a posn based on their Y posn
-                              (define (odd-posn mouse-x mouse-y)
-                                (make-posn (round (/ (- mouse-x PIX-OF-IMG-0) IMAGE-WIDTH))
-                                           (round (/ (- mouse-y PIX-OF-IMG-0) IMAGE-HEIGHT))))
-
-
-                              ;;number number -> posn
-                              ;;Purpose: Make a posn
-                              (define (block-space game mouse-x mouse-y)
-                                (if (even-row? mouse-y)
-                                    (cons (even-posn mouse-x mouse-y) (world-blockedspaces game))
-                                    (cons (odd-posn mouse-x mouse-y) (world-blockedspaces game))))]
-
-                        
-                        (cond [(equal? (world-gamestatus game) 'cat)
-                               (make-world 'blocker (move-cat game mouse-x mouse-y) (world-blockedspaces game))]
-                              [(equal? (world-gamestatus game) 'blocker)
-                               (make-world 'cat (world-catposn game) (block-space game mouse-x mouse-y))]
-                              [else game])))]
-                       
-              
-              (make-bundle (make-univ (univ-iws a-univ) (new-world mouse-x mouse-y))
-                           (map (λ (iw)
-                                  (make-mail iw (cons 'world (marshal-world (new-world mouse-x mouse-y)))))
-                                (univ-iws a-univ))
-                           '())))]
-    (if (eq? tag 'click)
-        (process-mouse-click (second a-tsm) (third a-tsm))
-        (error (format "Unknown to-server message type ~s"
-                       a-tsm)))))
+  (if (eq? tag 'click)
+      (process-mouse-click (second a-tsm) (third a-tsm))
+      (error (format "Unknown to-server message type ~s"
+                     a-tsm)))))
 
 
 

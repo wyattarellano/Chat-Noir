@@ -14,7 +14,6 @@
 (define E-SCENE (empty-scene E-SCENE-W E-SCENE-H E-SCENE-COLOR))
 (define HALF-IMG-W (/ IMAGE-WIDTH 2))
 
-;hello
 (define MAX-IMAGE-X-EVEN 6.5)
 (define MIN-IMAGE-X-EVEN 0.5)
 (define MAX-IMAGE-X-ODD 6)
@@ -60,6 +59,17 @@ A pixel-Y is an integer in [0 .. E-SCENE-H - 1]
 (define AN-IMG-Y (/ MAX-CHARS-VERTICAL 2))
 (define MIN-IMG-Y 0)
 (define MAX-IMG-Y (sub1 MAX-CHARS-VERTICAL))
+
+;; A (queueof X) is a (listof X)
+;; A (listof X) is either:
+;; 1. '()
+;; 2. (cons X (listof X))
+
+;;Sample instnaces of queueof spaces (qos)
+(define INIT-Q (list (make-posn 2 3) (make-posn 2.5 2) (make-posn 3.5 2) (make-posn 4 3) (make-posn 3.5 4) (make-posn 2.5 4)))
+(define INIT-Q2 (list (make-posn 2 3) (make-posn 2.5 2)  (make-posn 4 3) (make-posn 3.5 4) (make-posn 1 3) (make-posn 2 3) (make-posn 3 3)))
+(define INIT-Q3 (list (make-posn 4 5) (make-posn 4.5 6) (make-posn 6 5)))
+(define EMPTY-Q '())
 
 ;; gamestatus can be either:
 ;;  1. 'cat

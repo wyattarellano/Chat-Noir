@@ -580,8 +580,8 @@ TEMPLATE FOR A FUNCTION ON A LOS
                         (cond [(equal? (world-gamestatus game) 'cat)
                                (make-world 'blocker (move-cat game mouse-x mouse-y) (world-blockedspaces game))]
                               [(equal? (world-gamestatus game) 'blocker)
-                               (make-world 'cat (world-catposn game) (block-space game mouse-x mouse-y))])))]
-              ;;[else game])))]
+                               (make-world 'cat (world-catposn game) (block-space game mouse-x mouse-y))]
+                              [else game])))]
                        
               
               (make-bundle (make-univ (univ-iws a-univ) (new-world mouse-x mouse-y))
@@ -1092,8 +1092,8 @@ TEMPLATE FOR A FUNCTION ON A LOS
                         (define (dequeue a-qox)
                           (if (qempty? a-qox)
                               (error "dequeue applied to an empty queue")
-                              (rest a-qox)))
-                        ]
+                              (rest a-qox)))]
+                  
                   (if (ormap posn-at-edge? (rmv-visited a-qos a-world))
                       #true
                       (cat-can-escape? (enqueue (rmv-visited a-qos a-world) (dequeue a-qos))

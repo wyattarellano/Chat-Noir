@@ -184,7 +184,7 @@ TEMPLATE FOR A FUNCTION ON A SPACE
 
 ;; makes all space posns (its a list of spaces)
 (define space-list
-  (apply append   ;; the apply function applies append to each element in the list so its not a list of lists (i found it in the help desk)
+  (apply append   
          (build-list BOARD-SIZE
                      (λ (y)
                        (if (odd? y)
@@ -564,7 +564,8 @@ TEMPLATE FOR A FUNCTION ON A LOS
           ;; Purpose: Move the cat
           (define (move-cat a-world mouse-x mouse-y)
             (cond [(and (click-is-left? a-world mouse-x mouse-y)
-                        (not-blocked-space? (make-posn (sub1 (posn-x (world-catposn a-world))) (posn-y (world-catposn a-world)))
+                        (not-blocked-space? (make-posn (sub1 (posn-x (world-catposn a-world)))
+                                                       (posn-y (world-catposn a-world)))
                                             (world-blockedspaces a-world)))
                    (make-posn (sub1 (posn-x (world-catposn a-world))) (posn-y (world-catposn a-world)))]
                   [(and (click-is-right? a-world mouse-x mouse-y)

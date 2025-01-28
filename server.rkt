@@ -570,6 +570,7 @@ TEMPLATE FOR A FUNCTION ON A LOS
                          (map (λ (iw)
                                 (make-mail iw (cons 'world (marshal-world (new-world mouse-x mouse-y)))))
                               (univ-iws a-univ)) '()))
+
           ;; number number -> world
           ;; Purpose: Make a new world
           (define (new-world mouse-x mouse-y)
@@ -847,8 +848,10 @@ TEMPLATE FOR A FUNCTION ON A LOS
 
           ;;qos los visited world -> boolean
           ;;Purpose: To determine if the cat has a route to escape
+
           ;;Acccumulator Invariant:
           ;;  visited = spaces that have had their adjacents found
+
           ;;How: If the cat posn has a path to the edge or queue is empty stop.
           ;;Otherwise continue to check adjacent spaces in the queue that have not
           ;;been visited to search for an edge. Repeat this process by continuously
@@ -955,8 +958,10 @@ TEMPLATE FOR A FUNCTION ON A LOS
 
                        ;;qos los visited world -> boolean
                        ;;Purpose: To determine if the cat has a route to escape
+
                        ;;Acccumulator Invariant:
                        ;;  visited = spaces that have had their adjacents found
+
                        ;;How: If the cat posn has a path to the edge or queue is empty stop.
                        ;;Otherwise continue to check adjacent spaces in the queue that have not
                        ;;been visited to search for an edge. Repeat this process by continuously
@@ -1062,8 +1067,10 @@ TEMPLATE FOR A FUNCTION ON A LOS
 
                        ;;qos los visited world -> boolean
                        ;;Purpose: To determine if the cat has a route to escape
+
                        ;;Acccumulator Invariant:
                        ;;  visited = spaces that have had their adjacents found
+
                        ;;How: If the cat posn has a path to the edge or queue is empty stop.
                        ;;Otherwise continue to check adjacent spaces in the queue that have not
                        ;;been visited to search for an edge. Repeat this process by continuously

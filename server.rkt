@@ -241,7 +241,9 @@ TEMPLATE FOR A FUNCTION ON A LOS
 (define INIT-VISITED '())
 (define INIT-VISITED2 (list (make-posn 1 3) (make-posn 2 5)))
 
-;; a world is a structure: (make-world gamestatus posn los)
+;; A world is either
+;;  1. 'uninitialized
+;;  2. a structure: (make-world gamestatus catposn los)
 (define-struct world (gamestatus catposn blockedspaces))
 
 ;; sample instances of a world
@@ -254,9 +256,7 @@ TEMPLATE FOR A FUNCTION ON A LOS
 (define WORLD6 (make-world CAT-TURN (make-posn 5 5) (list (make-posn 1 1))))
 (define WORLD-TS (make-world NAME-TAKEN (make-posn 5 5) (list (make-posn 1 1))))
 
-;; A world is either
-;;  1. 'uninitialized
-;;  2. a structure: (make-world gamestatus catposn los)
+
 
 
 #|
@@ -396,9 +396,7 @@ TEMPLATE FOR A FUNCTION ON A LOS
               (list 'cat (list 2.5 2) (list (list 2 1) (list 5 7) (list 2 3))))
 
 #|
-     A to-player message (tpm) is either:
- 1. (cons 'world mw)
- 2. (cons 'connection-denied mw)
+     A to-player message (tpm) is: (cons 'world mw)
 
  tpm ... --> ...
  Purpose:
@@ -555,30 +553,12 @@ TEMPLATE FOR A FUNCTION ON A LOS
             (make-posn (round (/ (- mouse-x PIX-OF-IMG-0) IMAGE-WIDTH))
                        (round (/ (- mouse-y PIX-OF-IMG-0) IMAGE-HEIGHT))))
 
-
           ;;number number -> posn
           ;;Purpose: Make a posn
           (define (block-space game mouse-x mouse-y)
             (if (even-row? mouse-y)
                 (cons (even-posn mouse-x mouse-y) (world-blockedspaces game))
                 (cons (odd-posn mouse-x mouse-y) (world-blockedspaces game))))
-
-          ;; number number  --> bundle
-          ;; Purpose: Process a mouse event to return next world
-          (define (process-mouse-click mouse-x mouse-y)
-            (make-bundle (make-univ (univ-iws a-univ) (new-world mouse-x mouse-y))
-                         (map (λ (iw)
-                                (make-mail iw (cons 'world (marshal-world (new-world mouse-x mouse-y)))))
-                              (univ-iws a-univ)) '()))
-
-          ;; number number -> world
-          ;; Purpose: Make a new world
-          (define (new-world mouse-x mouse-y)
-            (cond [(equal? (world-gamestatus game) 'cat)
-                   (make-world 'blocker (move-cat game mouse-x mouse-y) (world-blockedspaces game))]
-                  [(equal? (world-gamestatus game) 'blocker)
-                   (make-world 'cat (world-catposn game) (block-space game mouse-x mouse-y))]
-                  [else game]))
 
           ;; world number number -> posn
           ;; Purpose: Move the cat
@@ -607,7 +587,25 @@ TEMPLATE FOR A FUNCTION ON A LOS
                         (not-blocked-space? (make-posn (+ (posn-x (world-catposn a-world)) OFFSET-VALUE) (add1 (posn-y (world-catposn a-world))))
                                             (world-blockedspaces a-world)))
                    (make-posn (+ (posn-x (world-catposn a-world)) OFFSET-VALUE) (add1 (posn-y (world-catposn a-world))))]
-                  [else (world-catposn a-world)]))]
+                  [else (world-catposn a-world)]))
+          
+          ;; number number -> world
+          ;; Purpose: Make a new world
+          (define (new-world mouse-x mouse-y)
+            (cond [(equal? (world-gamestatus game) 'cat)
+                   (make-world 'blocker (move-cat game mouse-x mouse-y) (world-blockedspaces game))]
+                  [(equal? (world-gamestatus game) 'blocker)
+                   (make-world 'cat (world-catposn game) (block-space game mouse-x mouse-y))]
+                  [else game]))
+
+          ;; number number  --> bundle
+          ;; Purpose: Process a mouse event to return next world
+          (define (process-mouse-click mouse-x mouse-y)
+            (local [(define new-game (new-world mouse-x mouse-y))]
+              (make-bundle (make-univ (univ-iws a-univ) new-game)
+                           (map (λ (iw)
+                                  (make-mail iw (cons 'world (marshal-world new-game))))
+                                (univ-iws a-univ)) '())))]
 
     (if (eq? tag 'click)
         (process-mouse-click (second a-tsm) (third a-tsm))
@@ -714,8 +712,8 @@ TEMPLATE FOR A FUNCTION ON A LOS
                                                              (make-world
                                                               INVALID
                                                               (world-catposn game)
-                                                              (world-blockedspaces game)))))
-                                     (list an-iw)))]
+                                                              (world-blockedspaces game))))))
+                        (list an-iw))]
           [else
            (make-bundle
             (make-univ new-iws new-game)
@@ -856,11 +854,16 @@ TEMPLATE FOR A FUNCTION ON A LOS
           ;;Otherwise continue to check adjacent spaces in the queue that have not
           ;;been visited to search for an edge. Repeat this process by continuously
           ;;checking other adjacent spaces that have not been visited.
-          (define (cat-can-escape? a-qos visited a-world)  
-            (and (not (qempty? a-qos))
-                 (or (ormap posn-at-edge? (rmv-visited a-qos a-world visited))
-                     (cat-can-escape? (enqueue (rmv-visited a-qos a-world visited) (dequeue a-qos))
-                                      (cons (Qfirst a-qos) visited) a-world))))]
+          (define (cat-can-escape? a-qos visited a-world)
+            (local [;;Makes sure that function can still run if queue is empty
+                    ;;because open-adjacent will not run if queue is empty.
+                    (define updated-visited (if (qempty? a-qos)
+                                                a-qos
+                                                (rmv-visited a-qos a-world visited)))]
+              (and (not (qempty? a-qos))
+                   (or (ormap posn-at-edge? updated-visited)
+                       (cat-can-escape? (enqueue updated-visited (dequeue a-qos))
+                                        (cons (Qfirst a-qos) visited) a-world)))))]
     
     (if (or (posn-at-edge? (world-catposn(univ-game a-univ)))
             (not (cat-can-escape? (open-adjacent (world-catposn (univ-game a-univ)) (univ-game a-univ))
@@ -966,11 +969,16 @@ TEMPLATE FOR A FUNCTION ON A LOS
                        ;;Otherwise continue to check adjacent spaces in the queue that have not
                        ;;been visited to search for an edge. Repeat this process by continuously
                        ;;checking other adjacent spaces that have not been visited.
-                       (define (cat-can-escape? a-qos visited a-world)  
-                         (and (not (qempty? a-qos))
-                              (or (ormap posn-at-edge? (rmv-visited a-qos a-world visited))
-                                  (cat-can-escape? (enqueue (rmv-visited a-qos a-world visited) (dequeue a-qos))
-                                                   (cons (Qfirst a-qos) visited) a-world))))]
+                       (define (cat-can-escape? a-qos visited a-world)
+                         (local [;;Makes sure that function can still run if queue is empty
+                                 ;;because open-adjacent will not run if queue is empty.
+                                 (define updated-visited (if (qempty? a-qos)
+                                                             a-qos
+                                                             (rmv-visited a-qos a-world visited)))]
+                           (and (not (qempty? a-qos))
+                                (or (ormap posn-at-edge? updated-visited)
+                                    (cat-can-escape? (enqueue updated-visited (dequeue a-qos))
+                                                     (cons (Qfirst a-qos) visited) a-world)))))]
     
                  (if (or (posn-at-edge? (world-catposn(univ-game OTHR-UNIV)))
                          (not (cat-can-escape? (open-adjacent (world-catposn (univ-game OTHR-UNIV)) (univ-game OTHR-UNIV))
@@ -1075,11 +1083,16 @@ TEMPLATE FOR A FUNCTION ON A LOS
                        ;;Otherwise continue to check adjacent spaces in the queue that have not
                        ;;been visited to search for an edge. Repeat this process by continuously
                        ;;checking other adjacent spaces that have not been visited.
-                       (define (cat-can-escape? a-qos visited a-world)  
-                         (and (not (qempty? a-qos))
-                              (or (ormap posn-at-edge? (rmv-visited a-qos a-world visited))
-                                  (cat-can-escape? (enqueue (rmv-visited a-qos a-world visited) (dequeue a-qos))
-                                                   (cons (Qfirst a-qos) visited) a-world))))]
+                       (define (cat-can-escape? a-qos visited a-world)
+                         (local [;;Makes sure that function can still run if queue is empty
+                                 ;;because open-adjacent will not run if queue is empty.
+                                 (define updated-visited (if (qempty? a-qos)
+                                                             a-qos
+                                                             (rmv-visited a-qos a-world visited)))]
+                           (and (not (qempty? a-qos))
+                                (or (ormap posn-at-edge? updated-visited)
+                                    (cat-can-escape? (enqueue updated-visited (dequeue a-qos))
+                                                     (cons (Qfirst a-qos) visited) a-world)))))]
     
                  (if (or (posn-at-edge? (world-catposn(univ-game OTHR-UNIV4)))
                          (not (cat-can-escape? (open-adjacent (world-catposn (univ-game OTHR-UNIV4)) (univ-game OTHR-UNIV4))
